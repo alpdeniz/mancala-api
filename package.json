@@ -1,0 +1,16 @@
+{
+  "name": "mancala",
+  "version": "0.0.1",
+  "description": "Tiny mancala game api written for Rapsodo",
+  "scripts": {
+    "start": "node server.js",
+    "test": "jest"
+  },
+  "devDependencies": {
+    "jest": "^26.6.3"
+  },
+  "dependencies": {
+    "express": "^4.17.1",
+    "uuid": "^8.3.2"
+  }
+}
