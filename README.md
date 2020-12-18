@@ -1,6 +1,6 @@
 # Mancala Game API
 
-Implements a basic http API for the game, Mancala (see [mancala](https://en.wikipedia.org/wiki/Mancala)
+Implements a basic http API for the game, Mancala (see [mancala](https://en.wikipedia.org/wiki/Mancala))
 
 ## Installation
     git clone {this repo} {dir}
