@@ -19,7 +19,7 @@ app.get('/start', (req, res) => {
 
     // generate a game id, keep in a cookie or auth etc.
     let newid = uuidv1()
-    // init the game
+    // init the game on memory
     games[newid] = new mancala( /*options*/ )
     games[newid].id = newid;
     // Send back game id and show game table on browser
