@@ -25,7 +25,7 @@ class Mancala {
 
         // Game Setup
         for (let i=0; i < MAX_PLAYERS * this.numberOfPlacesPerPlayer; i++) {
-            // A mancala
+            // It is a mancala!
             if (i % this.numberOfPlacesPerPlayer == this.numberOfPlacesPerPlayer-1) {
                 this.pits.push(0)
             } else {
@@ -38,7 +38,7 @@ class Mancala {
     }
 
     // Given player index (0 or 1) pick stones from a pit and distribute sequentially
-    // Returns {moveAgain: bool, gameEnded: bool}
+    // Returns result object
     pick(playerIndex, pitIndex) {
 
         // default result object
@@ -50,64 +50,21 @@ class Mancala {
             message: `Player ${playerIndex}'s turn has ended.` // message back for notifications
         }
 
-        // INVALID moves
-        // Not your turn
-        if (this.nextMove != playerIndex) {
+        // INVALID moves: non-existent player, wrong turn, wrong pit for player
+        let error = this.isValidMove(playerIndex, pitIndex)
+        if (error) {
             result.error = true;
-            result.message = "It is not your turn";
-            return result
-        }
-        // Not your pit
-        if (!this.isPlayersPit(pitIndex, playerIndex)) {
-            result.error = true;
-            result.message = "Player selected a wrong pit";
+            result.message = error;
             return result
         }
         
-        // Valid move. Go on
-        let stones = this.pits[pitIndex];
-        // no stone is left behind on that pit
-        this.pits[pitIndex] = 0;
-        let i = 0;
-        // sow stones until all of them are sown
-        while (i < stones) {
-            pitIndex++;
-            // mod pit index
-            pitIndex = pitIndex % (MAX_PLAYERS * this.numberOfPlacesPerPlayer)
-            // skip opponents mancala
-            if (this.isOpponentsMancala(pitIndex, playerIndex)) {
-                console.log("Opponent mancala!")
-                continue
-            }
-            // sow the stone into the next pit
-            this.pits[pitIndex]++
-            i++;
-        }
-
+        // Valid move. Spread stones
+        let lastPitIndex = this.playTurn(playerIndex, pitIndex)
+    
         // Now its time to apply the RULES
 
-        // This was an own empty pit. Collect this pit and the opposite pit
-        if (this.isPlayersPit(pitIndex, playerIndex) && this.pits[pitIndex] == 1) {
-
-            // First collect the last stone in owned pit
-            this.pits[pitIndex] = 0;
-            this.pits[this.getPlayersMancala()] += 1;
-
-            // opposite pit is its complementary to 13 e.g. pit index 0 -> 13, 1 -> 12 etc...
-            oppositePitIndex = getOppositePit(pitIndex)
-            // get stones in the opposite pit 
-            stones = this.pits[oppositePitIndex]
-            // empty opposite pit
-            this.pits[oppositePitIndex] = 0
-            // place into own mancala
-            this.pits[getPlayersMancala(playerIndex)] += stones
-            
-            // set result object
-            result.message = `Player ${playerIndex} got opposite pit's stone. Turn has ended.`
-        }
         // Ended at player's mancala, play again
-        else if (this.isPlayersMancala(pitIndex, playerIndex)) {
-
+        if (this.isPlayersMancala(playerIndex, lastPitIndex)) {
             // Pick a pit and play again
             result.moveAgain = true
             result.message = `Player ${playerIndex} plays again`
@@ -115,15 +72,75 @@ class Mancala {
             return result
         }
 
+        // This was an own empty pit. Collect this pit and the opposite pit
+        if (this.isPlayersPit(playerIndex, lastPitIndex) && this.pits[lastPitIndex] == 1) {
+            // collect stones to player's Mancala
+            this.collectOpponentsPit(playerIndex, lastPitIndex)
+            // set result object
+            result.message = `Player ${playerIndex} got opposite pit's stone. Turn has ended.`
+        }
+
         // set next player
         this.nextMove = this.getOpponent(this.nextMove)
-
         // check if game ends
         result.gameEnded = this.checkGameEnd()
         // not necessary, keeps live score anyway. Otherwise only call it when gameEnded=true
         result.results = this.calculateScores()
 
         return result
+    }
+
+    // check if move is valid by two rules: whose turn? whose pit?
+    isValidMove(playerIndex, index) {
+        // Not you
+        if (playerIndex >= MAX_PLAYERS)
+            return "Not a valid player"
+        // Not your turn
+        if (this.nextMove != playerIndex)
+            return "It is not your turn"
+        // Not your pit
+        if (!this.isPlayersPit(playerIndex, index))
+            return "Player selected a wrong pit";
+    }
+
+
+    // Distribute stones sequentially and return the last pit index
+    playTurn(playerIndex, index) {
+        let stones = this.pits[index];
+        // no stone is left behind on that pit
+        this.pits[index] = 0;
+        let i = 0;
+        // sow stones until all of them are sown
+        while (i < stones) {
+            index++;
+            // mod pit index
+            index = index % (MAX_PLAYERS * this.numberOfPlacesPerPlayer)
+            // skip opponents mancala
+            if (this.isOpponentsMancala(playerIndex, index)) {
+                console.log("Opponent mancala!")
+                continue
+            }
+            // sow the stone into the next pit
+            this.pits[index]++
+            i++;
+        }
+        return index
+    }
+
+    // better to relate this to exact terminology of the game (e.g. win? collect? )
+    collectOpponentsPit(playerIndex, index) {
+        // First collect the last stone in owned pit
+        this.pits[index] = 0;
+        this.pits[this.getPlayersMancala(playerIndex)] += 1;
+
+        // opposite pit is its complementary to 13 e.g. pit index 0 -> 13, 1 -> 12 etc...
+        oppositePitIndex = this.getOppositePit(index)
+        // get stones in the opposite pit 
+        stones = this.pits[oppositePitIndex]
+        // empty opposite pit
+        this.pits[oppositePitIndex] = 0
+        // place into own mancala
+        this.pits[this.getPlayersMancala(playerIndex)] += stones
     }
 
     // helper functions
@@ -145,33 +162,33 @@ class Mancala {
         return MAX_PLAYERS*this.numberOfPlacesPerPlayer - index - 1
     }
 
-    isPlayersPit(index, playerIndex) {
+    isPlayersPit(playerIndex, index) {
         // check if it is in range e.g. 0-5 player1 pits, 7-12 player2 pits
         return (index < (playerIndex+1)*this.numberOfPlacesPerPlayer-1 && index > playerIndex*this.numberOfPlacesPerPlayer-1)
     }
 
-    isPlayersPlace(index, playerIndex) {
-        return (this.isPlayersPit(index, playerIndex) || this.isPlayersMancala(index, playerIndex))
+    isPlayersPlace(playerIndex, index) {
+        return (this.isPlayersPit(playerIndex, index) || this.isPlayersMancala(playerIndex, index))
     }
 
     isMancala(index) {
         return (index % this.numberOfPlacesPerPlayer) == this.numberOfPlacesPerPlayer-1
     }
 
-    isPlayersMancala(index, playerIndex) {
+    isPlayersMancala(playerIndex, index) {
         return index == ((playerIndex+1) * this.numberOfPlacesPerPlayer -1)
     }
 
-    isOpponentsMancala(index, playerIndex) {
+    isOpponentsMancala(playerIndex, index) {
         let opponentPlayerIndex = this.getOpponent(playerIndex)
-        return this.isPlayersMancala(index, opponentPlayerIndex)
+        return this.isPlayersMancala(opponentPlayerIndex, index)
     }
 
     checkGameEnd() {
-        for (let playerIndex =0; playerIndex < MAX_PLAYERS; playerIndex++) {
+        for (let playerIndex = 0; playerIndex < MAX_PLAYERS; playerIndex++) {
             let sum = 0
             // loop through player's pits
-            for (let pitIndex = this.getPlayerPitStartIndex(playerIndex); this.isPlayersPit(pitIndex, playerIndex); pitIndex++) {
+            for (let pitIndex = this.getPlayerPitStartIndex(playerIndex); this.isPlayersPit(playerIndex, pitIndex); pitIndex++) {
                 // count stones in pits
                 sum += this.pits[pitIndex];
             }
@@ -187,7 +204,7 @@ class Mancala {
         for (let playerIndex = 0; playerIndex < MAX_PLAYERS; playerIndex++) {
             // loop through player's pits
             let sum = 0;
-            for (let pitIndex = this.getPlayerPitStartIndex(playerIndex); this.isPlayersPlace(pitIndex, playerIndex); pitIndex++) {
+            for (let pitIndex = this.getPlayerPitStartIndex(playerIndex); this.isPlayersPlace(playerIndex, pitIndex); pitIndex++) {
                 // count stones in player's pits and mancalas
                 sum += this.pits[pitIndex];
             }
