@@ -46,6 +46,7 @@ class Mancala extends BaseGame {
       moveAgain: false, // if the player should make a move again
       gameEnded: false, // this is actually interchangable with results key below.
       results: [], // scores of all players
+      pits: [], // game state
       message: `Player ${playerIndex}'s turn has ended.`, // message back for notifications
     };
 
@@ -85,6 +86,8 @@ class Mancala extends BaseGame {
     result.gameEnded = this.checkGameEnd();
     // not necessary, keeps live score anyway. Otherwise only call it when gameEnded=true
     result.results = this.calculateScores();
+    // loads pits state for display
+    result.pits = this.pits;
 
     return result;
   }
