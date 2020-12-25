@@ -16,13 +16,13 @@ const defaultOptions = {
 };
 
 const dba = new MongoDBA('mancala');
-const game = new Mancala(defaultOptions);
 
 // Web handlers
 //= ================
 // start and set the game in memory
 const setupGame = (req, res) => {
   // init game
+  const game = new Mancala(defaultOptions);
   const gameState = game.getState();
   // save
   try {
@@ -45,6 +45,8 @@ const validateParams = (playerIndex, pitIndex) => {
 
 // Make the move and serve the resulting object
 async function makeMove(req, res) {
+  // init game object
+  const game = new Mancala(defaultOptions);
   // get params
   const gameId = req.query.id;
   const playerIndex = parseInt(req.query.player, 10);
