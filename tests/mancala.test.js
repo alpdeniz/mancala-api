@@ -11,6 +11,14 @@ test('Init and make the first move', () => {
 test('Play again', () => {
   result = m.pick(0, 0);
   expect(result.moveAgain).toBe(true);
+});
+
+test('Empty pit selection', () => {
+  result = m.pick(0, 0);
+  expect(result.error).toBe(true);
+});
+
+test('Valid move, end turn', () => {
   result = m.pick(0, 1);
   expect(result.moveAgain).toBe(false);
 });
